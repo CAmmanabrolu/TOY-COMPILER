@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toy Compiler - Interactive Demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #357abd;
+            --secondary-color: #4a90e2;
+            --accent-color: #2ecc71;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+            --text-color: #2d3436;
+            --gradient-start: #357abd;
+            --gradient-end: #4a90e2;
+        }
+
+        body {
+            background-color: var(--background-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(108, 92, 231, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="rgba(255,255,255,0.1)" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,160C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>');
+            background-size: cover;
+            opacity: 0.1;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .code-section {
+            background-color: var(--card-background);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .code-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .code-section h3 {
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        #inputCode {
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            resize: vertical;
+        }
+
+        .btn-compile {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-compile:hover {
+            background-color: #357abd;
+            transform: translateY(-2px);
+        }
+
+        .token {
+            display: inline-block;
+            margin: 4px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .token:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .token-number { background-color: #e3f2fd; color: #1976d2; }
+        .token-operator { background-color: #f3e5f5; color: #7b1fa2; }
+        .token-keyword { background-color: #e8f5e9; color: #2e7d32; }
+        .token-identifier { background-color: #fff3e0; color: #f57c00; }
+
+        .error-message {
+            background: #ff6b6b;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.2);
+            animation: shake 0.5s ease-in-out;
+            white-space: pre-line;
+            font-family: 'Consolas', monospace;
+            line-height: 1.6;
+        }
+
+        .error-message ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .error-message li {
+            margin: 5px 0;
+        }
+
+        .error-tip {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .ast-node {
+            font-family: 'Consolas', monospace;
+            margin: 6px 0;
+            padding: 8px 12px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .ast-node:hover {
+            background-color: #f1f3f5;
+            transform: translateX(5px);
+        }
+
+        .ast-indent {
+            margin-left: 20px;
+        }
+
+        #debugOutput {
+            font-family: 'Consolas', monospace;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            display: none;
+            overflow-x: auto;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .loading i {
+            font-size: 2em;
+            color: var(--primary-color);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success-animation {
+            animation: success 0.5s ease-in-out;
+        }
+
+        @keyframes success {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .debugger-console {
+            background-color: #2d3436;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .debugger-header {
+            background: linear-gradient(135deg, #2d3436, #636e72);
+            border-radius: 15px 15px 0 0;
+            padding: 15px 20px;
+        }
+
+        .debugger-pin {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-weight: 600;
+        }
+
+        .debugger-input {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .debugger-input input {
+            flex: 1;
+            background-color: #2d3436;
+            border: 2px solid #636e72;
+            color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+        }
+
+        .debugger-input button {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .debugger-input button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
+        }
+
+        .debugger-output {
+            background-color: #2d3436;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .debugger-line {
+            margin: 8px 0;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+        }
+
+        .debugger-error { color: #ff6b6b; }
+        .debugger-success { color: #00b894; }
+        .debugger-command { color: #74b9ff; }
+
+        .footer {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            padding: 15px 0;
+            margin-top: 50px;
+            box-shadow: 0 -5px 15px rgba(108, 92, 231, 0.2);
+        }
+
+        .footer p {
+            margin: 0;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .footer i {
+            animation: heartbeat 1.5s ease-in-out infinite;
+            color: #ff6b6b;
+        }
+
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        /* Remove the fixed positioning and container padding */
+        .container {
+            padding-bottom: 0;
+        }
+
+        .stages-container {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            padding: 25px;
+            border-radius: 15px;
+            color: white;
+            box-shadow: 0 10px 20px rgba(108, 92, 231, 0.2);
+            margin-bottom: 30px;
+        }
+
+        .stage-flow {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .stage {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stage:hover {
+            transform: translateY(-5px) scale(1.02);
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stage-arrow {
+            font-size: 28px;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .stage h5 {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .stage p {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin: 0;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            padding: 15px 20px;
+            border: none;
+        }
+
+        .card-header h5 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 12px;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(108, 92, 231, 0.25);
+        }
+
+        .output-area, .token-area, .ast-area, .generated-area {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            max-height: 250px;
+            overflow-y: auto;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            border: 2px solid #e9ecef;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            border: none;
+            padding: 12px 35px;
+            font-weight: 600;
+            font-size: 1.1em;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--gradient-end);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-code"></i> Toy Compiler</h1>
+            <p>Interactive Compiler Demo - See how your code is processed!</p>
+        </div>
+        
+        <div class="container mt-4">
+            <h1 class="text-center mb-4">Toy Compiler</h1>
+            
+            <!-- Compilation Stages -->
+            <div class="stages-container mb-4">
+                <div class="stage-flow">
+                    <div class="stage" id="stage1">
+                        <h5>1. Lexical Analysis</h5>
+                        <p>Source → Tokens</p>
+                    </div>
+                    <div class="stage-arrow">→</div>
+                    <div class="stage" id="stage2">
+                        <h5>2. Syntax Analysis</h5>
+                        <p>Tokens → AST</p>
+                    </div>
+                    <div class="stage-arrow">→</div>
+                    <div class="stage" id="stage3">
+                        <h5>3. Code Generation</h5>
+                        <p>AST → Output</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Source Code</h5>
+                        </div>
+                        <div class="card-body">
+                            <textarea id="code" class="form-control" rows="10" placeholder="Enter your code here..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Output</h5>
+                        </div>
+                        <div class="card-body">
+                            <pre id="output" class="output-area"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Tokens</h5>
+                        </div>
+                        <div class="card-body">
+                            <pre id="tokens" class="token-area"></pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">AST</h5>
+                        </div>
+                        <div class="card-body">
+                            <pre id="ast" class="ast-area"></pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Generated Code</h5>
+                        </div>
+                        <div class="card-body">
+                            <pre id="generated" class="generated-area"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mb-4">
+                <button id="compileBtn" class="btn btn-primary">Compile</button>
+            </div>
+
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+            <div id="debugOutput"></div>
+        </div>
+
+        <footer class="footer mt-5 py-3">
+            <div class="container text-center">
+                <p class="mb-0">Made with <i class="fas fa-heart text-danger"></i> by Ammanabrolu Chetan Shankar</p>
+            </div>
+        </footer>
+    </div>
+
+    <div id="debuggerConsole" class="debugger-console">
+        <div class="debugger-header">
+            <h4><i class="fas fa-bug"></i> Debugger Console</h4>
+            <div>
+                PIN: <span id="debuggerPin" class="debugger-pin"></span>
+            </div>
+        </div>
+        <div class="debugger-output" id="debuggerOutput"></div>
+        <div class="debugger-input">
+            <input type="text" id="debuggerInput" placeholder="Enter debugger command...">
+            <button onclick="executeDebuggerCommand()">Execute</button>
+        </div>
+    </div>
+
+    <script>
+        function getTokenClass(type) {
+            if (type === 'NUMBER') return 'token-number';
+            if (['PLUS', 'MINUS', 'MUL', 'DIV', 'ASSIGN'].includes(type)) return 'token-operator';
+            if (type === 'PRINT') return 'token-keyword';
+            if (type === 'ID') return 'token-identifier';
+            return '';
+        }
+
+        function displayTokens(tokens) {
+            const tokensDiv = document.getElementById('tokens');
+            tokensDiv.innerHTML = tokens.map(token => 
+                `<span class="token ${getTokenClass(token.type)}">${token.type}: ${token.value}</span>`
+            ).join(' ');
+            tokensDiv.classList.add('success-animation');
+        }
+
+        function displayAST(astString) {
+            const astDiv = document.getElementById('ast');
+            const lines = astString.split('\n');
+            astDiv.innerHTML = lines.map(line => 
+                `<div class="ast-node">${line}</div>`
+            ).join('');
+            astDiv.classList.add('success-animation');
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.innerHTML = message.replace(/\n/g, '<br>');
+            errorDiv.style.display = 'block';
+            errorDiv.classList.add('error-shake');
+            
+            // Only show debugger console for actual errors, not for normal compilation
+            if (message.includes('Error:') || message.includes('Syntax error:') || message.includes('Runtime error:')) {
+                const debuggerConsole = document.getElementById('debuggerConsole');
+                debuggerConsole.style.display = 'block';
+                document.getElementById('debuggerPin').textContent = 'Enter PIN to continue';
+                
+                // Add helpful tip for syntax errors
+                if (message.includes('Syntax error')) {
+                    const tip = document.createElement('div');
+                    tip.className = 'error-tip';
+                    tip.innerHTML = '💡 Tip: Try checking your code for proper syntax, operators, and semicolons.';
+                    errorDiv.appendChild(tip);
+                }
+            }
+        }
+
+        function hideError() {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.style.display = 'none';
+            errorDiv.classList.remove('error-shake');
+            // Hide debugger console when hiding error
+            document.getElementById('debuggerConsole').style.display = 'none';
+        }
+
+        function showDebugOutput(text) {
+            const debugDiv = document.getElementById('debugOutput');
+            debugDiv.textContent = text;
+            debugDiv.style.display = 'block';
+        }
+
+        function hideDebugOutput() {
+            const debugDiv = document.getElementById('debugOutput');
+            debugDiv.style.display = 'none';
+        }
+
+        function showLoading() {
+            document.querySelector('.loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.querySelector('.loading').style.display = 'none';
+        }
+
+        let debuggerPin = '';
+        let debuggerHistory = [];
+        let debuggerHistoryIndex = -1;
+
+        function showDebuggerConsole(pin) {
+            const debuggerConsole = document.getElementById('debuggerConsole');
+            const debuggerPin = document.getElementById('debuggerPin');
+            
+            if (pin) {
+                debuggerPin.textContent = `PIN: ${pin}`;
+                debuggerPin.style.display = 'block';
+            } else {
+                debuggerPin.style.display = 'none';
+            }
+            
+            debuggerConsole.style.display = 'block';
+            document.getElementById('debuggerInput').focus();
+        }
+
+        function executeDebuggerCommand() {
+            const input = document.getElementById('debuggerInput');
+            const command = input.value.trim();
+            
+            if (command) {
+                addDebuggerOutput(`>>> ${command}`, 'command');
+                
+                // Simulate debugger commands
+                switch(command.toLowerCase()) {
+                    case 'continue':
+                        addDebuggerOutput('Continuing execution...', 'success');
+                        break;
+                    case 'step':
+                        addDebuggerOutput('Stepping through code...', 'success');
+                        break;
+                    case 'where':
+                        addDebuggerOutput('Current location: codegen.py, line 35', 'success');
+                        break;
+                    case 'list':
+                        addDebuggerOutput(`def visit_BinaryOp(self, node):
+    left = self.visit(node.left)
+    right = self.visit(node.right)
+    if node.operator == 'PLUS':
+        return f"({left} + {right})"
+    elif node.operator == 'MINUS':
+        return f"({left} - {right})"
+    elif node.operator == 'MUL':
+        return f"({left} * {right})"
+    elif node.operator == 'DIV':
+        if right == "0":
+            raise Exception("Division by zero error!")
+        return f"({left} / {right})"`, 'success');
+                        break;
+                    case 'quit':
+                        document.getElementById('debuggerConsole').style.display = 'none';
+                        break;
+                    default:
+                        addDebuggerOutput('Unknown command. Available commands: continue, step, where, list, quit', 'error');
+                }
+                
+                input.value = '';
+            }
+        }
+
+        function addDebuggerOutput(text, type = 'success') {
+            const output = document.getElementById('debuggerOutput');
+            const line = document.createElement('div');
+            line.className = `debugger-line debugger-${type}`;
+            line.textContent = text;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // Add keyboard support for debugger input
+        document.getElementById('debuggerInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                executeDebuggerCommand();
+            }
+        });
+
+        document.getElementById('compileBtn').addEventListener('click', function() {
+            const code = document.getElementById('code').value;
+            const errorMessage = document.getElementById('errorMessage');
+            const output = document.getElementById('output');
+            const tokens = document.getElementById('tokens');
+            const ast = document.getElementById('ast');
+            const generated = document.getElementById('generated');
+
+            // Reset previous state
+            errorMessage.style.display = 'none';
+            output.textContent = '';
+            tokens.textContent = '';
+            ast.textContent = '';
+            generated.textContent = '';
+            document.getElementById('debuggerConsole').style.display = 'none';
+
+            // Highlight current stage
+            function highlightStage(stageNum) {
+                document.querySelectorAll('.stage').forEach(stage => {
+                    stage.style.background = 'rgba(255, 255, 255, 0.1)';
+                });
+                document.getElementById('stage' + stageNum).style.background = 'rgba(255, 255, 255, 0.3)';
+            }
+
+            fetch('/compile', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ code: code })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    errorMessage.style.display = 'none';
+                    document.getElementById('debuggerConsole').style.display = 'none';
+                    
+                    // Stage 1: Lexical Analysis
+                    highlightStage(1);
+                    setTimeout(() => {
+                        tokens.textContent = JSON.stringify(data.data.tokens, null, 2);
+                        
+                        // Stage 2: Syntax Analysis
+                        highlightStage(2);
+                        setTimeout(() => {
+                            ast.textContent = data.data.ast;
+                            
+                            // Stage 3: Code Generation
+                            highlightStage(3);
+                            setTimeout(() => {
+                                generated.textContent = data.data.result;
+                                output.textContent = data.data.result;
+                            }, 500);
+                        }, 500);
+                    }, 500);
+                } else {
+                    showError(data.error);
+                    if (data.debugger_pin && (data.error.includes('Error:') || data.error.includes('Syntax error:') || data.error.includes('Runtime error:'))) {
+                        showDebuggerConsole(data.debugger_pin);
+                    }
+                }
+            })
+            .catch(error => {
+                showError('Error: ' + error.message);
+            });
+        });
+    </script>
+</body>
+</html> 
