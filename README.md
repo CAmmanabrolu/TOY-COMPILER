@@ -38,11 +38,14 @@ print(a + b)
 ### Main Interface
 ![Main Interface](screenshots/main_interface.png)
 
+
+
 ### Successful Compilation
 ![Successful Compilation](screenshots/successful_compilation.png)
 
 ### Error Handling
-![Error Handling](screenshots/error_handling.png)
+![image](https://github.com/user-attachments/assets/3ac2bbb5-94c5-4d4a-80c1-b84091d7787d)
+
 
 ## Installation
 
