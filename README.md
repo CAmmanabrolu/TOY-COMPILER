@@ -36,12 +36,16 @@ print(a + b)
 ## Screenshots
 
 ### Main Interface
-![Main Interface](screenshots/main_interface.png)
+![image](https://github.com/user-attachments/assets/eaff60c6-f3c1-433c-ad6b-264bfc03f3ec)
+
 
 
 
 ### Successful Compilation
-![Successful Compilation](screenshots/successful_compilation.png)
+![image](https://github.com/user-attachments/assets/fb7b3b3d-39af-4008-a7dc-a6b35e1ef4e1)
+![image](https://github.com/user-attachments/assets/9548aafe-e91b-4e1e-b887-0c15e822dac3)
+
+
 
 ### Error Handling
 ![image](https://github.com/user-attachments/assets/3ac2bbb5-94c5-4d4a-80c1-b84091d7787d)
